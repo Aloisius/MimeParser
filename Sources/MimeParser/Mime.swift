@@ -195,8 +195,6 @@ public struct MimeBody : Equatable {
     #endif
     
     public func decodedContentString(withIANACharsetName charset: String?) throws -> String {
-        let data = try decodedContentData()
-        
         #if os(macOS) || os(iOS) || os(tvOS)
             let stringEncoding: String.Encoding? = charset.flatMap { charset in
                 let cfEncoding = CFStringConvertIANACharSetNameToEncoding(charset as CFString)
@@ -211,6 +209,12 @@ public struct MimeBody : Equatable {
 		    return ianaTable.filter({ return $0.value == charset }).first?.key ?? .utf8
             }
         #endif
+        
+        if encoding == .eightBit && stringEncoding == .utf8 {
+            return raw
+        }
+        
+        let data = try decodedContentData()
         
         guard let decoded = String(data: data, encoding: stringEncoding ?? .utf8) else {
             throw Error.invalidCharset
